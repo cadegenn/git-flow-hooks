@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+# Runs at the end of git flow release start
+#
+# Positional arguments:
+# $1 The version (including the version prefix)
+# $2 The origin remote
+# $3 The full branch name (including the release prefix)
+# $4 The base from which this release is started
+#
+# The following variables are available as they are exported by git-flow:
+#
+# MASTER_BRANCH - The branch defined as Master
+# DEVELOP_BRANCH - The branch defined as Develop
+
+VERSION=$1
+ORIGIN=$2
+BRANCH=$3
+
+# Implement your script here.
+
+SCRIPT_PATH="$0"; while [ -h "$SCRIPT_PATH" ]; do SCRIPT_PATH=$(readlink "$SCRIPT_PATH"); done
+. "$(dirname $SCRIPT_PATH)/modules/functions.sh"
+
+# push branch develop
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push
+if [ $? -ne 0 ]; then
+	__print_fail "[${CURRENT_BRANCH}] git push failed"
+    exit 1
+fi
+
+# push branch master (to trigger CI/CD pipeline)
+# and tags
+git checkout master
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push --tags
+if [ $? -ne 0 ]; then
+	__print_fail "[${CURRENT_BRANCH}] git push failed"
+    exit 1
+fi
+git push
+if [ $? -ne 0 ]; then
+	__print_fail "[${CURRENT_BRANCH}] git push failed"
+    exit 1
+fi
+
+# get back to develop
+git checkout develop
+
+# To terminate the git-flow action, return a non-zero exit code.
+exit 0
